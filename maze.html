@@ -77,18 +77,18 @@
         return walls;
         };
 
-
-        
-        //takes a wallsObject and removes the keys for walls in path
-        var removePathWalls = function(wallsObj, pathA) {
-            var returnWall = function(prev, next) {
+        //given two coordinates finds the boundary between them; used with ternary assignment
+        var returnWall = function(prev, next) {
                 if (prev < next) {
                     return prev + .5;
                 }
                 else {
                     return next + .5;
                 }
-            };
+        };
+        
+        //takes a wallsObject and removes the keys for walls in path
+        var removePathWalls = function(wallsObj, pathA) {
             console.log
             while ( pathA.length > 1) {
                 var prev = pathA.shift();
@@ -177,10 +177,11 @@
         };
 
         
-        var moveArc = function(key, offsObj, func) {
+        var moveArc = function(key, offsObj, func, wallsObj) {
+            var current = {x:offsObj.x,y:offsObj.y};
             var next = func.call({x:offsObj.x, y:offsObj.y});
             console.log(next);
-            if (validArcMove(canToCoor(next), dim, visited)) {     
+            if (validArcMove(canToCoor(current), canToCoor(next), wallsObj)) {     
                 coverArc(ctxArcCover, offsObj);
                 switch(key) {
                     case 37:
@@ -196,11 +197,12 @@
                         offsObj.y += 50;
                     break;
             }
-           // canvas.width = canvas.width;
-           // drawBase();
-                 drawArc(offsObj);
+                drawArc(offsObj);
+                if (isEnd(canToCoor(next), ending)) {
+                    alert('You Won, You Deserve A Cookie!!!');
+                } 
             }
-                return offsObj;
+            return offsObj;
         };
         
         var drawPath = function(path, offset) {
@@ -251,7 +253,7 @@
             }
         };
 
-        //check if move is within bounds
+        //check if path finding move is within bounds
         var validMove = function(coordArr, dimensions, visited) {
             var endX = coordArr[0];
             var endY = coordArr[1];
@@ -262,17 +264,19 @@
                 return 1;
             }
         };
-
-        var validArcMove = function(coordArr, dimensions, visited) {
-            var endX = coordArr[0];
-            var endY = coordArr[1];
-            if ( endX < 1 || endX > dimensions[0] || endY < 1 || endY > dimensions[1] || !visited.hasOwnProperty(endX+'_'+endY)) {
+        
+        //check if arc movement is valid, i.e. not crossing a wall
+        var validArcMove = function(prevArr,nextArr,wallsObj) {
+            var x = prevArr[0] === nextArr[0] ? prevArr[0] : returnWall(prevArr[0], nextArr[0]); 
+            var y = prevArr[1] === nextArr[1] ? prevArr[1] : returnWall(prevArr[1], nextArr[1]);
+            if ( x < 1 || x > 10 || y < 1 || y > 10 || wallsObj.hasOwnProperty(x+'_'+y)) {
                 return 0;
             }
             else {
                 return 1;
             }
         };
+
         //object containing for functions corresponding to 4 neighbors of node in maze
         var getNeighbor =   {0: function(array) {
                                 return [array[0] + 1,array[1]];
@@ -358,7 +362,18 @@
             return path;
         };
 
-       
+        //return a node adjacent to path as start for false path
+        var getFalseNeighbor = function(node) {
+
+        }
+
+        var createFalsePaths = function(path) {
+            var fPaths = [];
+            for(var i =0; i < path.length; i++) {
+                
+            }
+        };
+        
         //record keyboard input-left-arrow:37 up-arrow:38 right-arrow:39 down-arrow:40
         $(window).keydown(function(e) {
             e.preventDefault();
@@ -374,7 +389,7 @@
                             40: function() {
                                     return {x:this.x,y: this.y + 50};
                                 }};
-            moveArc(e.which, offset, moveMap[e.which]);
+            moveArc(e.which, offset, moveMap[e.which], wallsO);
         });
       
         var rPath = randomPath(starting, ending);
