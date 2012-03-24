@@ -88,20 +88,24 @@
         };
         
         //takes a wallsObject and removes the keys for walls in path
-        var removePathWalls = function(wallsObj, pathA) {
-            console.log
-            while ( pathA.length > 1) {
-                var prev = pathA.shift();
-                var next = pathA[0];
+        var removePathWalls = function(wallsObj, pathA) { 
+            for (var i = 0; i< pathA.length-1; i++) {
+                var prev = pathA[i];
+                var next = pathA[i+1];
                 //determine what axis the wall is
                 var x = prev.x === next.x ? prev.x : returnWall(prev.x, next.x); 
                 var y = prev.y === next.y ? prev.y : returnWall(prev.y, next.y);
                 var key = x + '_' + y;
-                console.log('key is: '+key);
                 delete wallsObj[key];
             }
-        return wallsObj;
+            return wallsObj;
         };  
+
+        var removeFPathWalls = function(wallsObj, arrOfFPaths) {
+            for (var i = 0; i < arrOfFPaths.length; i++) {
+                removePathWalls(wallsObj, arrOfFPaths[i]);
+            }
+        };
 
         //given a wallsObj draws the wall
         var drawWalls = function(wallObj, wLength, offset) {  
@@ -277,20 +281,6 @@
             }
         };
 
-        //object containing for functions corresponding to 4 neighbors of node in maze
-        var getNeighbor =   {0: function(array) {
-                                return [array[0] + 1,array[1]];
-                               },
-                             1: function(array) {
-                                return [array[0] - 1,array[1]];
-                               },
-                             2: function(array) {
-                                 return [array[0],array[1] + 1];
-                               },
-                             3: function(array) {
-                                 return [array[0],array[1] - 1];
-                               }};
-          
         var anyValidPath = function (nArray, end, dimensions, curPath) {
             var checked = {}, toCheck = [], valid = false;
             toCheck.push(nArray);
@@ -351,10 +341,8 @@
                 var next = randomMove([path[path.length-1].x,path[path.length-1].y]);
                 var valid = validMove(next, dim, visited);
                 if ( valid && anyValidPath([next[0],next[1]], end,  dim, visited)) {
-                    console.log('its valid x: '+next[0]+', y: '+next[1]);
                     $('#path').append('x: ' +next[0]+ ', y: ' + next[1]+ '<br />');
                     path.push({x:next[0],y:next[1]});
-                    console.log('np: '+path[path.length-1].x);
                     visited[next[0]+'_'+next[1]] = 1;
                 }
             }
@@ -362,16 +350,62 @@
             return path;
         };
 
+        //object containing for functions corresponding to 4 neighbors of node in maze
+        var getNeighbor =   {0: function(array) {
+                                return [array[0] + 1,array[1]];
+                               },
+                             1: function(array) {
+                                return [array[0] - 1,array[1]];
+                               },
+                             2: function(array) {
+                                 return [array[0],array[1] + 1];
+                               },
+                             3: function(array) {
+                                 return [array[0],array[1] - 1];
+                               }};
+          
         //return a node adjacent to path as start for false path
-        var getFalseNeighbor = function(node) {
 
-        }
 
-        var createFalsePaths = function(path) {
-            var fPaths = [];
-            for(var i =0; i < path.length; i++) {
-                
+        var validFPath = function(nArray, lkUpObj, pathObj) {
+            var key = nArray[0]+'_'+nArray[1];
+            if (nArray[0] < 1 || nArray[0] > 10 || nArray[1] < 1 || nArray[1] > 10 || lkUpObj.hasOwnProperty(key) || pathObj.hasOwnProperty(key)) {
+                return 0;
             }
+            else {
+                return nArray;
+            }            
+        };
+
+        var getFalseNeighbor = function(pathArr, lkUpObj, pathObj) {
+            var m;
+            while (m = validFPath(randomMove([pathArr[pathArr.length-1].x,pathArr[pathArr.length-1].y]), lkUpObj, pathObj)) {
+                pathArr.push({x:m[0],y:m[1]});
+                lkUpObj[m[0]+'_'+m[1]] = 1;
+            }
+            return pathArr;
+        };
+
+        var createFalsePaths = function(pathv, pathObj) {
+            var fPaths = [];
+            var fPathsLkUp = {};
+            for(var i = 0; i < pathv.length; i++) {
+                console.log('starting f on new pNode'+pathv[i].x+'-'+pathv[i].y);
+                for (var d = 0; d < 4; d++) {
+                    var n = getNeighbor[d]([pathv[i].x, pathv[i].y]);
+                    if (!pathObj.hasOwnProperty(n[0]+'_'+n[1]) && !fPathsLkUp.hasOwnProperty(n[0]+'_'+n[1])) {
+                        console.log('should we add a fpath');
+                        if (Math.floor(Math.random()*2) > 0) {
+                            var fp = [{x:pathv[i].x,y:pathv[i].y}, {x:n[0],y:n[1]}];
+                            fPathsLkUp[n[0]+'_'+n[1]] = 1;
+                            var ffp = getFalseNeighbor(fp, fPathsLkUp, pathObj);
+                            fPaths.push(ffp);
+                        }    
+                    }
+                }
+            }
+            console.log(fPaths);
+            return fPaths;
         };
         
         //record keyboard input-left-arrow:37 up-arrow:38 right-arrow:39 down-arrow:40
@@ -394,6 +428,12 @@
       
         var rPath = randomPath(starting, ending);
         var wallsO = removePathWalls(createWallObject(dim), rPath);
+        console.log(rPath[0]);
+        console.log(rPath[1]);
+        var fPaths = createFalsePaths(rPath, visited);
+        console.log(fPaths);
+        removeFPathWalls(wallsO, fPaths);
+        console.log(wallsO);
         drawWalls(wallsO, 50, offsetA);
 
         </script>
