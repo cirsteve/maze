@@ -5,20 +5,19 @@
     </head>
     <body>
         <canvas id="myCanvas" width="520" height="520"></canvas>
-        <div id="path"></div>
+        <div id="path">Move Count:<span id="count">0</span></div>
 
 
         <script>
 
         var canvas = document.getElementById("myCanvas")
-          , context = canvas.getContext("2d")
-          , context2 = canvas.getContext("2d")
-          , context3 = canvas.getContext("2d")
-          , contextWalls = canvas.getContext("2d")
-          , ctxArcCover = canvas.getContext("2d")
-          , offset = {x:35, y:485} //location of marker
-          , offsetA = [35,485];
-
+            , context = canvas.getContext("2d")
+            , context2 = canvas.getContext("2d")
+            , context3 = canvas.getContext("2d")
+            , contextWalls = canvas.getContext("2d")
+            , ctxArcCover = canvas.getContext("2d")
+            , offset = {x:35, y:485} //location of marker
+            , offsetA = [35,485];
 
         //utility that takes a coordinate object and returns the [x,y] canvas array
         var coorToCan = function(coObj) {
@@ -29,26 +28,25 @@
             return [(canObj.x + 15) / 50,(535 - canObj.y) / 50];
         };
 
-        var drawGrid = function(context, sideLength, boxLength, offset) {
-          var xStart = offset[0]
-            , yStart = offset[1]
-            , xEnd = xStart + sideLength
-            , yEnd = yStart + sideLength
-            , xCoord = xStart + boxLength
-            , yCoord = yStart + boxLength;
+        var drawGrid = function(context, sideLength, boxLength, offsetI) {
+            var xStart = offsetI
+                , yStart = offsetI
+                , xEnd = xStart + sideLength
+                , yEnd = yStart + sideLength
+                , xCoord = xStart + boxLength
+                , yCoord = yStart + boxLength;
 
           //draw horizontal lines
-          context.moveTo(xStart, yStart);
-          while (yCoord < sideLength) {
+          context.moveTo(offsetI,offsetI);
+          while (yCoord < yEnd) {
             context.moveTo(xStart, yCoord);
             context.lineTo(xEnd, yCoord);
             context.stroke();
             yCoord += boxLength;
           }
-
           //draw vertical lines
-          context.moveTo(offset[0], offset[1]);
-          while (xCoord < sideLength) {
+          context.moveTo(offsetI, offsetI);
+          while (xCoord < xEnd) {
             context.moveTo(xCoord, yStart);
             context.lineTo(xCoord, yEnd);
             context.stroke();
@@ -80,7 +78,7 @@
 
         //given two coordinates finds the boundary between them; used with ternary assignment
         var returnWall = function(prev, next) {
-          return (prev < next) ? (prev + .5) : (next + .5);
+                return (prev < next) ? (prev + .5) : (next + .5);
         };
         
         //takes a wallsObject and removes the keys for walls in path
@@ -98,9 +96,9 @@
         };  
 
         var removeFPathWalls = function(wallsObj, arrOfFPaths) {
-          arrOfFPaths.forEach(function(FPath){
-            removePathWalls(wallsObj, FPath);
-          });
+            arrOfFPaths.forEach(function(FPath) {
+                removePathWalls(wallsObj, FPath);
+            });
         };
 
         //given a wallsObj draws the wall
@@ -152,7 +150,7 @@
           //draw gridlines
           context.beginPath();
           context.strokeStyle = "#B0C4DE";
-          drawGrid(context, 500, 50, [10,10]);
+          drawGrid(context, 500, 50, 10);
         };
 
         //draw postion marker
@@ -174,7 +172,7 @@
             ctx.fillRect(offsObj.x - 20, offsObj.y - 20, 40, 40);
         };
 
-        
+        var count = 0;
         var moveArc = function(key, offsObj, func, wallsObj) {
             var current = {x:offsObj.x,y:offsObj.y};
             var next = func.call({x:offsObj.x, y:offsObj.y});
@@ -196,6 +194,8 @@
                     break;
             }
                 drawArc(offsObj);
+                count += 1;
+                $('#count').text(count);
                 if (isEnd(canToCoor(next), ending)) {
                     alert('You Won, You Deserve A Cookie!!!');
                 } 
@@ -243,12 +243,7 @@
           , ending = {x:10, y:10};
 
         var isEnd = function(locArr, end) {
-            if(locArr[0]=== end.x && locArr[1]=== end.y) {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+            return (locArr[0]=== end.x && locArr[1]=== end.y) ? 1 : 0;
         };
 
         //check if path finding move is within bounds
@@ -260,8 +255,8 @@
         
         //check if arc movement is valid, i.e. not crossing a wall
         var validArcMove = function(prevArr,nextArr,wallsObj) {
-            var x = prevArr[0] === nextArr[0] ? prevArr[0] : returnWall(prevArr[0], nextArr[0])
-              , y = prevArr[1] === nextArr[1] ? prevArr[1] : returnWall(prevArr[1], nextArr[1]);
+            var x = prevArr[0] === nextArr[0] ? prevArr[0] : returnWall(prevArr[0], nextArr[0]); 
+            var y = prevArr[1] === nextArr[1] ? prevArr[1] : returnWall(prevArr[1], nextArr[1]);
             return ( x < 1 || x > 10 || y < 1 || y > 10 || wallsObj.hasOwnProperty(x+'_'+y)) ? 0 : 1;
         };
 
@@ -325,7 +320,6 @@
                 var next = randomMove([path[path.length-1].x,path[path.length-1].y]);
                 var valid = validMove(next, dim, visited);
                 if ( valid && anyValidPath([next[0],next[1]], end,  dim, visited)) {
-                    $('#path').append('x: ' +next[0]+ ', y: ' + next[1]+ '<br />');
                     path.push({x:next[0],y:next[1]});
                     visited[next[0]+'_'+next[1]] = 1;
                 }
@@ -352,8 +346,8 @@
 
 
         var validFPath = function(nArray, lkUpObj, pathObj) {
-          var key = nArray[0]+'_'+nArray[1];
-          return (nArray[0] < 1 || nArray[0] > 10 || nArray[1] < 1 || nArray[1] > 10 || lkUpObj.hasOwnProperty(key) || pathObj.hasOwnProperty(key)) ? 0 : nArray;
+            var key = nArray[0]+'_'+nArray[1];
+            return (nArray[0] < 1 || nArray[0] > 10 || nArray[1] < 1 || nArray[1] > 10 || lkUpObj.hasOwnProperty(key) || pathObj.hasOwnProperty(key)) ? 0 : nArray;    
         };
 
         var getFalseNeighbor = function(pathArr, lkUpObj, pathObj) {
@@ -374,12 +368,12 @@
                     var n = getNeighbor[d]([pathv[i].x, pathv[i].y]);
                     if (!pathObj.hasOwnProperty(n[0]+'_'+n[1]) && !fPathsLkUp.hasOwnProperty(n[0]+'_'+n[1])) {
                         console.log('should we add a fpath');
-                        if (Math.floor(Math.random()*2) > 0) {
+                        if (Math.floor(Math.random()*3) >= 0) {
                             var fp = [{x:pathv[i].x,y:pathv[i].y}, {x:n[0],y:n[1]}];
                             fPathsLkUp[n[0]+'_'+n[1]] = 1;
                             var ffp = getFalseNeighbor(fp, fPathsLkUp, pathObj);
                             fPaths.push(ffp);
-                        }
+                        }    
                     }
                 }
             }
@@ -389,6 +383,7 @@
         
         //record keyboard input-left-arrow:37 up-arrow:38 right-arrow:39 down-arrow:40
         $(window).keydown(function(e) {
+            console.log(wallsOb);
             e.preventDefault();
             var moveMap = { 37: function() {
                                     return {x:this.x - 50,y: this.y};
@@ -402,25 +397,20 @@
                             40: function() {
                                     return {x:this.x,y: this.y + 50};
                                 }};
-            moveArc(e.which, offset, moveMap[e.which], wallsO);
+            moveArc(e.which, offset, moveMap[e.which], wallsOb);
         });
+       // $(document).ready(function() {
+            var rPath = randomPath(starting, ending)
+              , wallsOb = removePathWalls(createWallObject(dim), rPath)
+              , fPaths = createFalsePaths(rPath, visited);
 
-        //Do stuff on page load
-        $(document).ready(function(){
-          var rPath = randomPath(starting, ending)
-            , wallsO = removePathWalls(createWallObject(dim), rPath)
-            ,  fPaths = createFalsePaths(rPath, visited);
-
-          console.log(rPath[0]);
-          console.log(rPath[1]);
-          console.log(fPaths);
-          console.log(wallsO);
-
-
-          removeFPathWalls(wallsO, fPaths);
-          drawWalls(wallsO, 50, offsetA);
-        });
-
+            console.log(rPath[0]);
+            console.log(rPath[1]);
+            console.log(fPaths);
+        
+            removeFPathWalls(wallsOb, fPaths);
+            drawWalls(wallsOb, 50, offsetA);
+        
         </script>
     </body>
 </html>
