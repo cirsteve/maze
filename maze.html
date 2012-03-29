@@ -272,13 +272,13 @@
                 for ( var i = 0; i < 4; i++) {
                     var n = getNeighbor[i](nA); 
                     //console.log('checkN: '+n);
-                    if (validMove(n, dimensions, curPath) && !checked.hasOwnProperty(n[0]+'_'+n[1])) {
-                        toCheck.push(n);
-                    }
-                    else if (isEnd(n, end)) {
+                   if (isEnd(n, end)) {
                         valid = true;
                         break;
                     } 
+                    else if (validMove(n, dimensions, curPath) && !checked.hasOwnProperty(n[0]+'_'+n[1])) {
+                        toCheck.push(n);
+                    }
                 }
                 return valid;
             };
@@ -312,7 +312,7 @@
 
         var visited = {}; //obj for efficient lookup of nodes in path
         var randomPath = function(current, end) {
-
+            console.log('starting randPath');
             visited['1_1'] = 1; //add starting node to visited object
             var path = []; // list of nodes in path
             path.push(current);
