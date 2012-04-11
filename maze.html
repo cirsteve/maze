@@ -2,6 +2,7 @@
 <html>
     <head>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://localhost/myhome/jslib/jquery-1.6.4.js"></script>
     </head>
     <body>
         <canvas id="myCanvas" width="520" height="520"></canvas>
@@ -380,6 +381,123 @@
             console.log(fPaths);
             return fPaths;
         };
+
+        var initNodeSets = function (dimensions) {
+            var sets = [];
+            var x, y, node, key;
+            for (y = 1; y <= dimensions[1]; y++) {
+                x = 1;
+                while(x <= dimensions[0]) {
+                    key = x+'_'+y;
+                    node = {key: true};
+                    sets.push(node);
+            }
+            }
+            return sets;
+        };
+
+        var createWallArray = function(dimensions) {
+            var walls = []
+              , start = [1,1];
+          //add vertical walls
+            for (var y = 1; y <= dimensions[1]; y++) {
+                var x = 1.5;
+                while(x < dimensions[0]) {
+                    walls.push([x,y]);
+                    x += 1;
+                }
+            }
+            for (var x = 1; x <= dimensions[0]; x++) {
+                var y = 1.5;
+                while(y < dimensions[1]) {
+                    walls.push([x,y]);
+                    y += 1;
+                }
+            }
+            console.log(walls+' just created');
+            return walls;
+        };
+
+        var wallArrToObj = function (walls) {
+            var wallObj = {};
+            walls.forEach(function(wall) {
+                wallObj[wall[0]+'_'+wall[1]] = true;
+            });
+            return wallObj;
+        };
+
+        var nodeFromWall = function (wall) {
+            console.log('nodeFromWall: '+wall);
+            //if (wall[0].indexOf('.') === 0) {
+            if (wall[0] - Math.floor(wall[0]) === 0) {
+                return [[wall[0],wall[1]-.5], [wall[0], wall[1]+.5]];
+            }
+            else {
+                return [[wall[0]-.5, wall[1]], [wall[0]+.5, wall[1]]];
+            }
+        };
+
+        var findNodeSet = function (node, sets) {
+            var set = -1;
+            for (i=0; i<sets.length; i++) {
+                set = sets[i].indexOf(node);
+                if (set !== -1) {
+                    return i;
+                }
+            }
+            return set;
+        };
+
+        var kruskals = function (walls) {
+            var sets = [];
+            var wall, index, nodes, n1, n2, n1Set, n2Set, newArr;
+            do  {
+                console.log('sl '+sets.length);
+                index = Math.floor(Math.random()*walls.length);
+                console.log('ind'+index);
+                wall = walls[index];
+                nodes = nodeFromWall(wall);
+                n1 = nodes[0][0]+'_'+nodes[0][1];
+                n2 = nodes[1][0]+'_'+nodes[1][1];
+                n1Set = findNodeSet(n1, sets);
+                n2Set = findNodeSet(n2, sets);
+                console.log('nsets: '+n2Set+'_'+n1Set);
+                if (n1Set === -1 && n2Set === -1) {
+                    console.log('c1');
+                    sets.push([n1, n2]);
+                    walls.splice(index, 1);
+                    continue;
+                }
+                else if (n1Set === -1) {
+                    console.log('c2');
+                    sets[n2Set].push(n1);
+                    walls.splice(index, 1);
+                    continue;
+                }
+                else if (n2Set === -1) {
+                    console.log('c3');
+                    sets[n1Set].push(n2);
+                    walls.splice(index, 1);
+                    continue;
+                }
+                else if (n1Set !== n2Set) {
+                    console.log('c4');
+                    newArr = sets[n1Set].concat(sets[n2Set]);
+                    if (n1Set > n2Set) {
+                        sets.splice(n1Set, 1);
+                        sets.splice(n2Set, 1);
+                    }
+                    else {
+                        sets.splice(n2Set, 1);
+                        sets.splice(n1Set, 1);
+                    }
+                    sets.push(newArr);
+                    walls.splice(index, 1);
+                }
+            }
+            while ( sets[0].length < 100);
+            return walls;
+        };
         
         //record keyboard input-left-arrow:37 up-arrow:38 right-arrow:39 down-arrow:40
         $(window).keydown(function(e) {
@@ -400,15 +518,16 @@
             moveArc(e.which, offset, moveMap[e.which], wallsOb);
         });
        // $(document).ready(function() {
-            var rPath = randomPath(starting, ending)
-              , wallsOb = removePathWalls(createWallObject(dim), rPath)
-              , fPaths = createFalsePaths(rPath, visited);
+           // var rPath = randomPath(starting, ending)
+           //   , wallsOb = removePathWalls(createWallObject(dim), rPath)
+           //   , fPaths = createFalsePaths(rPath, visited);
 
-            console.log(rPath[0]);
-            console.log(rPath[1]);
-            console.log(fPaths);
+           // console.log(rPath[0]);
+           // console.log(rPath[1]);
+          //  console.log(fPaths);
         
-            removeFPathWalls(wallsOb, fPaths);
+           // removeFPathWalls(wallsOb, fPaths);
+            wallsOb = wallArrToObj(kruskals(createWallArray(dim)));
             drawWalls(wallsOb, 50, offsetA);
         
         </script>
